@@ -1,14 +1,11 @@
 import os
 import random
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, List, Optional
 
 import cv2
 import imageio
 import numpy as np
 import tqdm
-from allenact.utils.system import get_logger
-from allenact.utils.tensor_utils import SummaryWriter
-from allenact.utils.viz_utils import AbstractViz, AgentViewViz
 from PIL import Image
 
 
@@ -237,32 +234,6 @@ def overlay_heatmap_with_annotations(image, mask, alpha=0.5, font_size=0.25):
 
         image_with_masks.append(overlay)
 
-    # for i in range(1, num_labels):
-    #     center_x, center_y = int(centroids[i][0]), int(centroids[i][1])
-
-    #     # Get the label index
-    #     label_index = i
-
-    #     # Draw the label index at the center of the component
-    #     w, h = 10, 10
-    #     cv2.rectangle(
-    #         overlay,
-    #         (center_x - w // 2, center_y - h // 2),
-    #         (center_x + w // 2, center_y + h // 2),
-    #         (0, 0, 0),
-    #         -1,
-    #     )
-    #     cv2.putText(
-    #         overlay,
-    #         str(label_index),
-    #         (center_x - 2, center_y + 2),
-    #         cv2.FONT_HERSHEY_SIMPLEX,
-    #         font_size,
-    #         (255, 255, 255),
-    #         1,
-    #         cv2.LINE_AA,
-    #     )
-
     return image_with_masks
 
 
@@ -285,199 +256,6 @@ def smooth_mask(mask, kernel=None, num_iterations=3):
     mask2 = cv2.erode(mask2, kernel, iterations=num_iterations)
     mask2 = np.bitwise_and(mask, mask2)
     return mask1, mask2
-
-
-class DiskAgentViewViz(AgentViewViz):
-    def __init__(
-        self,
-        label: str = "agent_view",
-        output_path: str = "",
-        max_episodes: int = 500,
-        **kwargs,
-    ):
-        super().__init__(label, **kwargs)
-        self.output_path = output_path
-        self.max_episodes = max_episodes
-
-    def log(
-        self,
-        log_writer: SummaryWriter,
-        task_outputs: Optional[List[Any]],
-        render: Optional[Dict[str, List[Dict[str, Any]]]],
-        num_steps: int,
-    ):
-        if render is None:
-            return
-        keys = list(render.keys())
-        print("Render : {}".format(keys))
-
-        datum_id = self._source_to_str(
-            self.vector_task_sources[0], is_vector_task=True
-        )
-
-        print("task output: {}".format(task_outputs[0]))
-        sampled_episodes = task_outputs
-        for i, episode in enumerate(sampled_episodes):
-            episode_id = episode["task_info"]["id"]
-            print(episode.keys())
-            print(episode["task_info"].keys())
-            uuid = "episodeId={}-success={}".format(
-                episode_id,
-                int(episode["success"]),
-            )
-            overlay_label = uuid.replace("-", "\n")
-            # assert episode_id in render
-            if episode_id not in render:
-                get_logger().warning(
-                    "skipping viz for missing episode {}".format(episode_id)
-                )
-                continue
-            images = [
-                self._overlay_label(step[datum_id], overlay_label)
-                for step in render[episode_id]
-            ]
-            images_to_video(images, self.output_path, uuid)
-
-
-class DiskTopDownAgentViewViz(AbstractViz):
-    def __init__(
-        self,
-        label: str = "agent_top_down_view",
-        output_path: str = "",
-        max_clip_length: int = 100,  # control memory used when converting groups of images into clips
-        max_video_length: int = -1,  # no limit, if > 0, limit the maximum video length (discard last frames)
-        max_episodes: int = 500,
-        vector_task_source: List[Tuple[str, Dict[str, Any]]] = [
-            (
-                "render_custom",
-                {"mode": "rgb_right"},
-            ),
-            (
-                "render",
-                {"mode": "raw_rgb_list"},
-            ),
-        ],
-        episode_ids: Optional[Sequence[Union[Sequence[str], str]]] = None,
-        fps: int = 4,
-        max_render_size: int = 500,
-        **other_base_kwargs,
-    ):
-        self.output_path = output_path
-        self.max_episodes = max_episodes
-
-        super().__init__(
-            label,
-            vector_task_sources=vector_task_source,
-            **other_base_kwargs,
-        )
-        self.max_clip_length = max_clip_length
-        self.max_video_length = max_video_length
-        self.fps = fps
-        self.max_render_size = max_render_size
-
-        self.episode_ids = (
-            (
-                list(episode_ids)
-                if not isinstance(episode_ids[0], str)
-                else [list(cast(List[str], episode_ids))]
-            )
-            if episode_ids is not None
-            else None
-        )
-
-    def log(
-        self,
-        log_writer: SummaryWriter,
-        task_outputs: Optional[List[Any]],
-        render: Optional[Dict[str, List[Dict[str, Any]]]],
-        num_steps: int,
-    ):
-        if render is None:
-            return
-        keys = list(render.keys())
-
-        datum_id = self._source_to_str(
-            self.vector_task_sources[0], is_vector_task=True
-        )
-        rgb_datum_id = self._source_to_str(
-            self.vector_task_sources[1], is_vector_task=True
-        )
-
-        sampled_episodes = random.sample(
-            task_outputs, min(self.max_episodes, len(task_outputs))
-        )  # self.max_episodes)
-        for i, episode in enumerate(sampled_episodes):
-            episode_id = episode["task_info"]["id"]
-            uuid = "episodeId={}-success={}".format(
-                episode_id,
-                int(episode["success"]),
-            )
-            overlay_label = uuid.split("-")
-            # assert episode_id in render
-            if episode_id not in render:
-                get_logger().warning(
-                    "skipping viz for missing episode {}".format(episode_id)
-                )
-                continue
-            all_images = []
-
-            for step in render[episode_id]:
-                rgb_img = self._overlay_label(step[rgb_datum_id], overlay_label)
-                rgb_img = Image.fromarray(rgb_img)
-                rgb_img = rgb_img.resize((500, 500), Image.ANTIALIAS)
-
-                img = Image.fromarray(step[datum_id])
-                img = img.resize((500, 500), Image.ANTIALIAS)
-
-                images = [rgb_img, img]
-                widths, heights = zip(*(i.size for i in images))
-
-                total_width = sum(widths)
-                max_height = max(heights)
-
-                new_im = Image.new("RGB", (total_width, max_height))
-
-                x_offset = 0
-                for im in images:
-                    new_im.paste(im, (x_offset, 0))
-                    x_offset += im.size[0]
-
-                all_images.append(np.array(new_im))
-
-            images_to_video(all_images, self.output_path, uuid)
-
-    @staticmethod
-    def _overlay_label(
-        img,
-        text,
-        pos=(0, 0),
-        bg_color=(255, 255, 255),
-        fg_color=(255, 255, 255),
-        scale=0.4,
-        thickness=1,
-        margin=5,
-        font_face=cv2.FONT_HERSHEY_SIMPLEX,
-    ):
-        txt_size = cv2.getTextSize(text[0], font_face, scale, thickness)
-
-        end_x = pos[0] + txt_size[0][0] + margin
-        end_y = pos[1]
-
-        pos = (pos[0], pos[1] + txt_size[0][1] + margin)
-
-        for txt in text:
-            cv2.putText(
-                img=img,
-                text=txt,
-                org=pos,
-                fontFace=font_face,
-                fontScale=scale,
-                color=fg_color,
-                thickness=thickness,
-                lineType=cv2.LINE_AA,
-            )
-            pos = (pos[0], pos[1] + txt_size[0][1] + margin)
-        return img
 
 
 def overlay_mask_with_gaussian_blur(affordance, img):
