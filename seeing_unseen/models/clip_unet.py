@@ -316,11 +316,6 @@ class CLIPUNet(CLIPUNetImgQuery):
 
         x = self.forward_encoder(receptacle, target)
 
-        if self.add_discriminator:
-            disc = self.discriminator(x)
-            disc_out = self.discriminator_fc(disc)
-            output["disc_out"] = disc_out
-
         if not discriminator_only:
             x = self.layer1(x)
             x = self.layer2(x)

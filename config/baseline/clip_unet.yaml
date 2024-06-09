@@ -12,13 +12,15 @@ dataset:
   name: "semantic_placement"
   root_dir: "data/datasets/semantic_placement/"
   val_dir: "data/datasets/floorplanner_inpainting_v5/"
-  train_transforms: "albumentations_hard"
-  val_transforms: "albumentations_hard"
+  train_transforms: "segmentation_base"
+  val_transforms: "segmentation_base"
 
   transform_args:
     resize_prob: 0.0
     random_resize_crop_prob: 0.0
-    resized_resolution: null
+    resized_resolution: 
+      - 512
+      - 512
 
 training:
   trainer: "semantic_placement"
@@ -68,8 +70,6 @@ training:
   eval_with_tta: false
   eval_splits:
     - "val"
-    - "val_sim"
-    - "val_real"
 
 model:
   name: "clip_unet"

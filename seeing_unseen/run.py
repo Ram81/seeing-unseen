@@ -7,8 +7,8 @@ from seeing_unseen.trainer.trainer import SemanticPlacementTrainer
 
 
 @hydra.main(
-    config_path=os.path.join(os.getcwd(), "config/visual_reasoner/"),
-    config_name="main",
+    config_path=os.path.join(os.getcwd(), "config/baseline/"),
+    config_name="clip_unet",
 )
 def main(cfg: DictConfig):
     trainer = SemanticPlacementTrainer(

@@ -406,7 +406,7 @@ class SemanticPlacementTrainer(BaseTrainer):
             loss = loss_fn(outputs, batch["mask"])
             loss.backward()
 
-            metrics = self.metrics(outputs, batch, mode="train")
+            metrics, _ = self.metrics(outputs, batch, mode="train")
 
             if torch.isnan(loss):
                 o_inputs = torch.sigmoid(outputs)
@@ -868,8 +868,6 @@ class SemanticPlacementTrainer(BaseTrainer):
                 superimposed_affordance = overlay_mask_with_gaussian_blur(
                     pred_mask > 0.5, img
                 )
-
-                # overlayed_preds = overlay_heatmap(img, pred_heatmap)
                 save_image(
                     superimposed_affordance,
                     os.path.join(
@@ -893,51 +891,6 @@ class SemanticPlacementTrainer(BaseTrainer):
                             ),
                         ),
                     )
-
-            # if "text" in self.cfg.dataset.name:
-            #     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(15, 5))
-            #     ax1.imshow(img)
-            #     ax1.set_title("Input image \n Query: {}".format(query))
-            #     ax2.imshow(overlay_semantic_mask(img, target))
-            #     ax2.set_title("Ground truth mask")
-            #     ax3.imshow(overlay_heatmap(img, pred_heatmap))
-            #     ax3.set_title("Predicted mask")
-            #     sns.heatmap(logits, ax=ax4, xticklabels=100, yticklabels=100)
-            #     ax4.set_aspect(
-            #         logits.shape[1] / logits.shape[0]
-            #     )  # here 0.5 Y/X ratio
-            #     ax4.set_title("Predicted logits")
-
-            #     fig.savefig(
-            #         os.path.join(
-            #             output_dir, "pred_{}_{}.png".format(query, sample_idx)
-            #         )
-            #     )
-            #     plt.close(fig)
-            # else:
-            #     query = np.transpose(query * 255, (1, 2, 0)).astype(np.uint8)
-
-            #     fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(
-            #         1, 5, figsize=(15, 5)
-            #     )
-            #     ax1.imshow(img)
-            #     ax1.set_title("Input image")
-            #     ax2.imshow(query)
-            #     ax2.set_title("Target patch")
-            #     ax3.imshow(overlay_semantic_mask(img, target))
-            #     ax3.set_title("Ground truth mask")
-            #     ax4.imshow(overlay_heatmap(img, pred_heatmap))
-            #     ax4.set_title("Predicted mask")
-            #     sns.heatmap(logits, ax=ax5, xticklabels=100, yticklabels=100)
-            #     ax5.set_aspect(
-            #         logits.shape[1] / logits.shape[0]
-            #     )  # here 0.5 Y/X ratio
-            #     ax5.set_title("Predicted logits")
-
-            #     fig.savefig(
-            #         os.path.join(output_dir, "pred_{}.png".format(sample_idx))
-            #     )
-            #     plt.close(fig)
 
             if sample_idx > sample_size:
                 break
