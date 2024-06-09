@@ -1,0 +1,128 @@
+defaults:
+  - override hydra/hydra_logging: disabled
+  - override hydra/job_logging: disabled
+  - _self_
+
+hydra:
+  output_subdir: null
+  run:
+    dir: .
+
+dataset:
+  name: "semantic_placement"
+  root_dir: "data/datasets/semantic_placement/"
+  val_dir: "data/datasets/floorplanner_inpainting_v5/"
+  train_transforms: "albumentations_hard"
+  val_transforms: "albumentations_hard"
+
+  transform_args:
+    resize_prob: 0.0
+    random_resize_crop_prob: 0.0
+    resized_resolution: null
+
+training:
+  trainer: "semantic_placement"
+  epochs: 25
+
+  optimizer: "SGD"
+  lr: 0.001
+  weight_decay: 0.05
+  layer_decay: 0.75
+
+  batch_size: 8
+  save_interval: 100
+  log_interval: 10
+
+  lr_scheduler:
+    name: "StepLR"
+    warmup_epochs: 5
+    step_decay: 10
+    min_lr: 1e-5
+    gamma: 0.99
+
+  discriminator:
+    lr: 0.0005
+    loss_weight: 0.2
+
+  pretrained: false
+  pretrained_checkpoint: null
+
+  dataset:
+    num_workers: 4
+    load_original_img: false
+
+  loss:
+    name: "soft_dice"
+    soft_dice:
+      eps: 1e-7
+    mae_reconstruction:
+      norm_pix_loss: false
+      patch_size:
+        - 16
+        - 16
+      recon_weight: 0.5
+      clip_weight: 0.5
+      mean_over_samples: false
+      clip_loss: "l2"
+
+  eval_with_tta: false
+  eval_splits:
+    - "val"
+    - "val_sim"
+    - "val_real"
+
+model:
+  name: "clip_unet"
+  type: "clip"
+  pretrained_checkpoint: null
+
+  add_discriminator: false
+
+  image_size: 224
+
+  # These numbers come from CLIP.
+  rgb_means:
+    - 0.48145466
+    - 0.4578275
+    - 0.40821073
+  rgb_stds:
+    - 0.26862954
+    - 0.26130258
+    - 0.27577711
+
+  clip:
+    # Must be in "RN50" or "RN50x16"
+    model_type: "RN50"
+
+distributed:
+  backend: "GLOO"
+  # The machine_id of this node
+  machine_id: 0
+
+  # IP and port of the head distrubted process
+  ip_and_port: 127.0.0.1:0
+
+  # Number of distributed nodes
+  nodes: 1
+
+visualization:
+  interval: 5
+  visualize: false
+  save_observations: false
+  sample_size: 100
+  output_dir: "outputs/visual_reasoner/frames/"
+  save_separate_masks: false
+  metrics_dir: ""
+
+wandb:
+  entity: axel81
+  project: visual-reasoner
+  name: null
+  job_type: train
+
+run_type: "train"
+
+checkpoint_dir: "outputs/visual_reasoner/checkpoints/semantic_placement/"
+log_dir: "outputs/visual_reasoner/logs/semantic_placement/"
+
+seed: 42

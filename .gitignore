@@ -1,0 +1,17 @@
+# python
+__pycache__/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Data
+data/
+outputs/
+glide_model_cache/
+datadump/
+
+# IDE
+.vscode/
+
+# Logs
+wandb/
+slurm_logs/
