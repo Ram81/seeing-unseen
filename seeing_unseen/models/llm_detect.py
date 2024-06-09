@@ -213,7 +213,7 @@ class LLMDetectGroundedSAM(SPModel):
         return output
 
 
-@registry.register_affordance_model(name="llm_detect")
+@registry.register_affordance_model(name="llm_detect_detic")
 class LLMDetect(SPModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

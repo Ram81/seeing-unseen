@@ -56,15 +56,54 @@ python seeing_unseen/run.py config/baseline/clip_unet.yaml \
   checkpoint_dir="/path/to/checkpoint/dir/"
 ```
 
-<!-- 
+
 
 ## 🎯 Evaluation
 
 ### CLIP-UNet
 
+Use the following command to evaluate CLIP-UNet on Semantic Placement:
+
+```bash
+python seeing_unseen/run.py   \
+  run_type=eval  \
+  dataset.root_dir="/path/to/val/split/"   \
+  checkpoint_dir="/path/to/checkpoint/" \
+  model.name="clip_unet" \
+  training.eval_splits="['val']" \
+  training.eval_with_tta=false \
+  training.trainer="semantic_placement_evaluator"
+```
+
 ### LLaVA
 
-### LLM + Detector -->
+Use the following command to evaluate LLaVA on Semantic Placement:
+
+```bash
+python seeing_unseen/run.py   \
+  run_type=eval  \
+  dataset.root_dir="/path/to/val/split/"   \
+  checkpoint_dir="/path/to/checkpoint/" \
+  model.name="llava" \
+  training.eval_splits="['val']" \
+  training.eval_with_tta=false \
+  training.trainer="semantic_placement_evaluator"
+```
+
+### LLM + Detector
+
+Use the following command to evaluate LLM+Detector baseline using Detic detector on Semantic Placement:
+
+```bash
+python seeing_unseen/run.py   \
+  run_type=eval  \
+  dataset.root_dir="/path/to/val/split/"   \
+  checkpoint_dir="/path/to/checkpoint/" \
+  model.name="llm_detect_detic" \
+  training.eval_splits="['val']" \
+  training.eval_with_tta=false \
+  training.trainer="semantic_placement_evaluator"
+```
 
 
 ## :pencil: Citation
